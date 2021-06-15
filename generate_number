@@ -1,0 +1,7 @@
+#!/bin/bash
+SIZE=$1
+if [ "$SIZE" == "" ];then
+	echo "Please specify size of the number that will be generated."
+else
+	openssl rand -hex $1
+fi

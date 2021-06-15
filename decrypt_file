@@ -1,0 +1,40 @@
+#!/bin/bash
+source $SCRIPT_PATH/.defaults
+
+#Necessary Parameters
+FILE_PATH=$1 
+ENCRYPTED_PASSPHRASE_FILE=$2
+RSA_PASSPHRASE_FILE=$3
+PRIVATE_KEY=$4
+
+
+if [ "$FILE_PATH" == "" ];then
+	echo "Please specify the file that will be decrypted."
+
+elif [ "$ENCRYPTED_PASSPHRASE_FILE" == "" ];then
+	echo "Please specify encrypted password file"
+
+elif [ "$RSA_PASSPHRASE_FILE" == "" ];then
+	echo "Please specify RSA Key passphrase file."
+
+elif [ "$PRIVATE_KEY" == "" ];then
+	echo "Please specify private key."
+
+else
+	echo $PRIVATE_KEY
+
+	# Decrypting the password file with private key
+	PASSPHRASE=$(openssl rsautl -decrypt -inkey $PRIVATE_KEY -in $ENCRYPTED_PASSPHRASE_FILE -passin file:$RSA_PASSPHRASE_FILE)
+	echo "[+] Encrypted passphrase has been decrypted with private key."
+
+	# Removing extension
+	FILENAME="${FILE_PATH%.*}"
+	echo "extracted filename : " $FILENAME # Just for testint
+
+	# Decrypting the file with passphrase
+	echo $PASSPHRASE | openssl enc -d -p -aes-256-cbc -pbkdf2 -salt -in $FILE_PATH -out "$FILENAME.$DECRYPTED_EXT" -pass stdin
+	echo "[+] File has been decrypted with private key."
+
+fi
+
+

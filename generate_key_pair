@@ -1,0 +1,20 @@
+#!/bin/bash
+source $SCRIPT_PATH/.defaults
+
+PASS_SIZE=$1
+PRIV_OUT=$2
+PASSPHRASE_OUT=$3
+PUBL_OUT=$4
+
+# Usage : generate_key_pair <passphrase_size:bits> <passphrase_outname> <private_key_outname> <public_key_outname>
+
+generate_private_key $PASS_SIZE $PRIV_OUT $PASSPHRASE_OUT
+
+if [ "$PASSPHRASE_OUT"  ==  "" ];then
+	PASSPHRASE_OUT=$DEFAULT_PASSPHRASE_OUT
+fi
+
+if [ "$PRIV_OUT" == "" ];then
+	PRIV_OUT=$DEFAULT_PRIV_OUT
+fi
+generate_public_key $PRIV_OUT $PASSPHRASE_OUT $PUBL_OUT

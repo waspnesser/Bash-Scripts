@@ -1,0 +1,25 @@
+#!/bin/bash
+
+source $SCRIPT_PATH/.defaults
+
+PASSPHRASE_SIZE=$1
+PRIV_OUT=$2
+PASSPHRASE_OUT=$3
+
+if [ "$PASSPHRASE_OUT"  ==  "" ];then
+	PASSPHRASE_OUT=$DEFAULT_PASSPHRASE_OUT
+fi
+if [ "$PRIV_OUT" == "" ];then
+	PRIV_OUT=$DEFAULT_PRIV_OUT
+fi
+if [ "$PASSPHRASE_SIZE"  ==  "" ];then
+	PASSPHRASE_SIZE="$DEFAULT_PASSPHRASE_SIZE"
+fi
+
+# echo $PRIV_OUT $PASSPHRASE_SIZE $PASSPHRASE_OUT
+# echo $DEFAULT_PRIV_OUT $DEFAULT_PASSPHRASE_SIZE $DEFAULT_PASSPHRASE_OUT
+
+# Generating and saving the passphrase
+generate_number $PASSPHRASE_SIZE > $PASSPHRASE_OUT
+# Generating RSA Private Key with AES256 encryption
+openssl genpkey -algorithm RSA -aes256 -out $PRIV_OUT -pkeyopt rsa_keygen_bits:4096  -pass file:$PASSPHRASE_OUT

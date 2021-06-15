@@ -1,0 +1,45 @@
+#!/bin/bash
+source $SCRIPT_PATH/.defaults
+
+#Necessary Parameters
+FILE_PATH=$1 
+PUBLIC_KEY=$2
+
+#Arbitary Options
+PASSPHRASE_SIZE=$3
+PASSPHRASE_OUT=$4
+
+
+# NOTE:
+# I am not sure which one is more secure for passphrases between saving to file or piping passphrase to stdin
+if [ "$FILE_PATH" == "" ];then
+	echo "Please specify the file that will be encrypted."
+
+elif [ "$PUBLIC_KEY" == "" ];then
+	echo "Please specify public key."
+else
+	if [ "$PASSPHRASE_OUT"  ==  "" ];then
+		PASSPHRASE_OUT=$DEFAULT_PASSPHRASE_OUT
+	fi
+	if [ "$PASSPHRASE_SIZE"  ==  "" ];then
+		PASSPHRASE_SIZE="$DEFAULT_PASSPHRASE_SIZE"
+	fi
+	
+	
+	PASSPHRASE=$(generate_number $PASSPHRASE_SIZE) # Generating Passphrase
+	echo "[+] Random passphrase ,which size of $PASSPHRASE_SIZE, generated."
+
+	# Encrypting the file with password
+	echo $PASSPHRASE | openssl enc -p -aes-256-cbc -pbkdf2 -salt -in $FILE_PATH -out "$FILE_PATH.$ENCRYPTED_EXT" -pass stdin
+	echo "[+] File has been encrypted with generated passphrase."
+
+	# Encrypting the passphrase with public key
+	echo $PASSPHRASE | openssl rsautl -encrypt -inkey $PUBLIC_KEY -pubin -out "$PASSPHRASE_OUT.$ENCRYPTED_EXT"
+	echo "[+] Passphrase has been encrypted with public key."
+	# openssl rsautl -encrypt -inkey $PUBLIC_KEY -pubin -in $PASSPHRASE_FILE -out "$FILE_PATH.$ENCRYPTED_EXT" # passphrase as file input
+
+fi
+
+
+
+
