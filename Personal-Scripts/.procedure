@@ -1,0 +1,55 @@
+
+Bazı gerekli fonksiyonlar : 
+save-sha512sum (){
+	FILE=$1
+	sha512sum file | cut -d " " -f 1 > $FILE.sha512sum
+
+}
+
+check-sha512sum (){
+	FILE=$1
+	FILE_SUMFILE=$2
+	sha512sum $FILE | cut -d " " -f 1 > new_sum && if diff -q new_sum $FILE_SUMFILE ;then echo "OK";fi && rm new_sum
+
+}
+
+
+
+Şifreleme Prosedürü:
+
+1) Prosedüre sokulacak dosyayı belirle.
+2) Dosyanın SHA512SUM değerini al ve bir dosyaya aktar.
+	-> save-sha512sum file
+3) Dosyayı encrypt_file scripti ile şifrele ve şifrelenmemiş halini sil.
+	-> encrypt_file file path/public.pem 128 file.pass && rm file
+4) Oluşan AES256 ile şifrelenmiş asıl dosyanın SHA512SUM değerini al ve bir dosyaya aktar.
+	-> save-sha512sum file.enc
+5) Şifrelenmiş asıl dosya ve onun SHA512SUM değerinin bulunduğu dosyayı tar ile birleştir, ve açık hallerini sil. 
+	-> tar --remove-files -czvf file.tar.gz file.enc file.enc.sha512sum
+6) Birleştirilen tar dosyasını personal-upload2MEGA scriptini kullanarak buluta gönder ve local sistemden sil.
+	-> personal-upload2MEGA file.tar.gz "/Uploads/" 1 && rm file.tar.gz
+7) Üretilen şifrenin RSA açık anahtarla şifrelenmiş dosyasının SHA512SUM değerini al ve bir dosyaya aktar.
+	-> save-sha512sum file.pass.enc
+8) RSA açık anahtarla şifrelenmiş şifre dosyasını, şifrelenmemiş asıl dosyayının ve şifrelenmiş şifre dosyasının SHA512SUM değerlerinin bulunduğu dosyaları ilk önce sıkıştır sonra tar ile birleştir ve local sistemden sil.
+	-> gzip --best file.pass.enc file.sha512sum file.pass.enc.sha512sum && tar --remove-files -czvf file_passphrase.tar.gz file.pass.enc.gz file.sha512sum.gz file.pass.enc.sha512sum.gz
+9) Tar ile birleştirdiğin  dosyanın base64 halini al ve bir dosyaya kaydet .
+	-> file_passphrase.tar.gz | base64 > file_passphrase.tar.gz.b64
+10) Base64 Halindeki dosyayı fiziksel olarak sakla.
+
+
+Şifreli Dosyayı Çözme Prosedürü:
+
+1) Şifreli dosyayı buluttan indir ve tar dosyası aç.
+2) Şifreli dosyanın birlikteliğini test et.
+	-> check-sha512sum file.enc file.enc.sha512sum
+2) Şifreli dosyanın şifresini saklayan base64 kodunu elde et.
+3) Base64 kodunu çözümle ve tar dosyasını aç, açılan dosyaların sıkıştırmasını kaldır. İçerisinden üç tane dosya çıkması gerekir. Şifreli şifrenin ve asıl plain dosyanın SHA512SUM değerleri ve şifrelenmiş şifre dosyası.
+	-> cat file_passphrase.tar.gz.pass | base64 -d > file_passphrase.tar.gz && tar -xzvf file_passphrase.tar.gz | xargs gzip -d  && rm file_passphrase.tar.gz
+4) Şifreli şifre dosyasının birlikteliğini test et.
+	-> check-sha512sum file.pass.enc file.pass.enc.sha512sum
+5) decrypt_file scripti ile şifreli dosyayı çöz.
+	-> decrypt_file file.enc file.pass.enc path/RSA_PASSPHRASE.pass path/private.pem 
+6) Çözülmüş dosyanın birlikteliğini test et.
+	-> check-sha512sum file.enc.dec file.sha512sum
+7) Geriye kalan dosyaları sil.
+	-> rm file.pass.enc file.pass.enc.sha512sum file.sha512sum file.enc.sha512sum

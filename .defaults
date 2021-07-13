@@ -1,0 +1,6 @@
+export DEFAULT_PASSPHRASE_SIZE=64
+export DEFAULT_PRIV_OUT="private.pem"
+export DEFAULT_PUBL_OUT="public.pem"
+export DEFAULT_PASSPHRASE_OUT="passphrase"
+export ENCRYPTED_EXT="enc"
+export DECRYPTED_EXT="dec"

@@ -1,0 +1,109 @@
+#!/bin/bash
+
+save-sha512sum (){
+        FN=$1
+        sha512sum $FN | cut -d " " -f 1 > $FN.sha512sum
+
+}
+
+check-sha512sum (){
+        FN=$1
+        FILE_SUMFILE=$2
+        sha512sum $FN | cut -d " " -f 1 > new_sum && if diff -q new_sum $FILE_SUMFILE ;then echo "OK";fi && rm new_sum
+
+}
+
+encryption_procedure(){
+	FILENAME=$1
+	PUBLICKEY=$2
+	save-sha512sum $FILENAME
+	echo "[1] SHA512sum of $FILENAME calculated&saved to $FILENAME.sha512sum"
+
+	encrypt_file $FILENAME $PUBLICKEY 128 $FILENAME".pass" && rm $FILENAME
+	echo "[2] $FILENAME has been encrypted and saved to $FILENAME.enc"
+	echo $FILENAME
+
+	save-sha512sum $FILENAME".enc"
+	echo "[3] SHA512sum of $FILENAME.enc calculated&saved to $FILENAME.enc.sha512sum "
+	echo $FILENAME
+
+	tar --remove-files -czvf $FILENAME".tar.gz" $FILENAME".enc" $FILENAME".enc.sha512sum"
+	echo "[4] $FILENAME.enc and $FILENAME.enc.sha512sum compressed to $FILENAME.tar.gz and removed"
+
+	personal-upload2MEGA $FILENAME".tar.gz" "/Uploads/" 1 && rm $FILENAME".tar.gz"
+	echo "[5] $FILENAME.tar.gz uploaded to Mega Cloud and removed"
+
+	save-sha512sum $FILENAME".pass.enc"
+	echo "[6] SHA512sum of $FILENAME.pass.enc calculated&saved to $FILENAME.pass.enc.sha512sum"
+
+	gzip --best $FILENAME".pass.enc" $FILENAME".sha512sum" $FILENAME".pass.enc.sha512sum"
+	tar --remove-files -czvf $FILENAME"_password.tar.gz" $FILENAME".pass.enc.gz" $FILENAME".sha512sum.gz" $FILENAME".pass.enc.sha512sum.gz"
+	echo "[7] $FILENAME.pass.enc, $FILENAME.sha512sum and $FILENAME.pass.enc.sha512sum compressed to $FILENAME\\_password.tar.gz"
+
+	cat $FILENAME"_password.tar.gz" | base64 > $FILENAME"_password.tar.gz.b64" && rm $FILENAME"_password.tar.gz"
+	echo "[8] $FILENAME\\_password.tar.gz converted to base64 and saved to $FILENAME\\_password.tar.gz.b64 and removed"
+
+}
+
+decryption_procedure() {
+	COMPRESSED_ENCRYPTEDFILE=$1
+	PASSWORDFILE=$2
+	PRIVATEKEY=$3
+	PRIVATEKEY_PASSWORDFILE=$4
+	BASEFILENAME=$5
+
+	tar -xzvf $COMPRESSED_ENCRYPTEDFILE
+	echo "[1]"
+	check-sha512sum $BASEFILENAME".enc" $BASEFILE"enc.sha512sum"
+	echo "[2]"
+	cat $PASSWORDFILE | base64 -d > tmp_file_password.tar.gz && tar -xzvf tmp_file_password.tar.gz | xargs gzip -d && rm tmp_file_password.tar.gz
+	echo "[3]"
+	check-sha512sum $BASEFILENAME".pass.enc" $BASEFILENAME".pass.enc.sha512sum"
+	echo "[4]"
+	decrypt_file $BASEFILENAME".enc" $BASEFILENAME".pass.enc" $PRIVATEKEY_PASSWORDFILE $PRIVATEKEY
+	echo "[5]"
+	check-sha512sum $BASEFILENAME".dec" $BASEFILENAME".sha512sum"
+	echo "[6]"
+	rm $BASEFILENAME".pass.enc" $BASEFILENAME".pass.enc.sha512sum" $BASEFILENAME".sha512sum" $BASEFILENAME".enc.sha512sum" $BASEFILENAME".enc"
+	echo "[7]"
+}
+
+
+MODE=$1
+
+if [ $MODE == "" ];then
+	echo "[-] You have to specify mode(e:encryption d:decryption)"
+else
+	if [ $MODE == "e" ];then
+
+		FILENAME=$2
+		PUBLICKEY=$3
+
+		if [ $FILENAME == "" ];then
+			echo "[-] You have to specify filename"
+		else
+			if [ $PUBLICKEY == "" ];then
+				echo "[-] You have to specify public key"
+			else
+				encryption_procedure $FILENAME $PUBLICKEY
+			fi
+
+		fi
+
+		
+	elif [ $MODE == "d" ];then
+		COMPRESSED_ENCRYPTEDFILE=$2
+		PASSWORDFILE=$3
+		PRIVATEKEY=$4
+		PRIVATEKEY_PASSWORDFILE=$5
+		BASEFILENAME=$6
+
+		if [[ $COMPRESSED_ENCRYPTEDFILE == "" || $PASSWORDFILE == "" || $PRIVATEKEY == "" || $PRIVATEKEY_PASSWORDFILE == "" || $BASEFILENAME == "" ]];then
+			echo "Something wrong with arguments, please fix it and try it again."
+		else
+			decryption_procedure $COMPRESSED_ENCRYPTEDFILE $PASSWORDFILE $PRIVATEKEY $PRIVATEKEY_PASSWORDFILE $BASEFILENAME
+		fi
+		
+	fi
+
+fi

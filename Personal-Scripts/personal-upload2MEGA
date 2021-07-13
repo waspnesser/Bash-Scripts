@@ -1,0 +1,33 @@
+#!/bin/bash
+
+LOCALDATA_PATH=$1
+REMOTE_PATH=$2
+LOGOUT=$3
+
+# echo -n "E-Mail : "
+# read email
+# echo 
+# echo -n "Password : "
+# read -s password
+# echo 
+
+mega-https on
+# mega-login $email $password
+# echo "[+] Login process successfully completed."
+
+# Checking setted target path whether exist or not. If it doesn't it will create it recursively.
+if mega-find $REMOTE_PATH | grep -q "Couldn't find ";then
+	echo "[INFO] Specified Remote Path($REMOTE_PATH) not found."
+	mega-mkdir -p $REMOTE_PATH
+	echo "[+] Specified Remote Path($REMOTE_PATH) has been created."
+fi
+
+mega-put $LOCALDATA_PATH $REMOTE_PATH
+echo "[+] Specified local data successfully uploaded."
+
+if [ $LOGOUT == "" ];then
+	mega-logout
+	echo "[+] Logout process successfully completed."
+fi
+
+
