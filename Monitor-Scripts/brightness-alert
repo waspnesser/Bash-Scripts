@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# This script little disappointing for me. Because changing display brightness takes time so
+# change of brightness little bit slow, thus appearence not smooth as I planned. Additionally, sleep effect
+# is not working as I expected due to slowness of change of display brightness. So disappointing...
+# Hence, this results, I won't generalise this script, I'll leave as it is.
+# ***Besides, this script could be harmful for monitor health&life expectancy.
+# I was planning to add RGB effect too, but I've changed my mind due to performance of script.
+
+MON="HDMI-1"
+
+
+get_current_brightness() {
+	current_brightness=$( xrandr --verbose --current | grep ^"$MON" -A5 | tail -n1 )
+	echo "${current_brightness##* }"
+}
+
+perl_sleep() {
+	# 1,000,000 microsecond = 1 second
+	amount=$1 # This is microseconds
+	perl -MTime::HiRes -e "Time::HiRes::usleep $amount"
+}
+
+bottom_brightness=0.1
+top_brightness=1.0
+brightness_increment=0.1
+initial_brightness=$(get_current_brightness)
+current_brightness=$initial_brightness
+increment_sleep=50000 # 0.05 sec
+
+if (( $(echo "$initial_brightness > $top_brightness" | bc -l) ));then
+	fix_increment="-$brightness_increment"
+elif (( $(echo "$initial_brightness < $top_brightness" | bc -l) ));then
+	fix_increment="$brightness_increment"
+fi
+
+# Pushing current_brightness to range of top and bottom brightness
+while (( $(echo "$current_brightness != $top_brightness" | bc -l) ))
+do
+	current_brightness=$(echo "$current_brightness+($fix_increment)" | bc -l)
+	set-brightness $current_brightness $MON
+	perl_sleep $increment_sleep 
+done
+
+times=5
+times=$(echo "(($top_brightness-$bottom_brightness)/$brightness_increment)*$times" | bc -l)
+echo $times
+
+for i in {1..30};
+do
+	if (( $(echo "$current_brightness == $bottom_brightness" | bc -l) ));then
+		fix_increment="$brightness_increment"
+	elif (( $(echo "$current_brightness == $top_brightness" | bc -l) ));then
+		fix_increment="-$brightness_increment"
+	fi
+	
+	current_brightness=$(echo "$current_brightness+($fix_increment)" | bc -l)
+	set-brightness $current_brightness $MON
+	perl_sleep $increment_sleep 
+	
+
+done
+

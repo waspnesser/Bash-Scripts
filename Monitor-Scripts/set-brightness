@@ -1,0 +1,28 @@
+#!/bin/bash
+
+PRIMARY_MONITOR=$(primary-monitor)
+
+BRIGHTNESS=$1
+MONITOR=$2
+
+
+if [[ $MONITOR == "" ]];then
+	MONITOR=$PRIMARY_MONITOR
+fi
+
+if [ $BRIGHTNESS == "" ];then
+	echo "Usage : set-brightness <display-name> <brightness:0-1>"
+else
+	if [ $(list-monitors | grep "$MONITOR") ];then
+		if (( $(echo "$BRIGHTNESS >= 0.0 && $BRIGHTNESS <= 1.0" | bc -l)  ))  ;then
+			xrandr --output $MONITOR --brightness $BRIGHTNESS
+		else
+			echo "[-] Specified brightness($BRIGHTNESS) out of range."
+		fi
+	else
+		echo "[-] $MONITOR not connected. Connected monitors : "
+		list-monitors
+		
+	fi
+fi
+
