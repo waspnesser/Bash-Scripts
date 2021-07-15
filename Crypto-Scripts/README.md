@@ -14,8 +14,4 @@ Usages :
 
 > decrypt\_file \<encrypted file\> \<encrypted passphrase file\> \<private key passphrase file\> \<private key file\>
 
-## Monitor-Scripts
 
-Usages : 
-
-> list-monitors
