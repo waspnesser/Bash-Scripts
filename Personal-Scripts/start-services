@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# My existing services
+# 631/tcp  open  ipp       CUPS 2.2
+# 3306/tcp open  mysql     MySQL 5.7.34-0ubuntu0.18.04.1
+# 6379/tcp open  redis     Redis key-value store 4.0.9
+# 9050/tcp open  tor-socks Tor SOCKS proxy
+
+sudo systemctl start cups
+sudo systemctl start mysql
+sudo systemctl start tor
+sudo /etc/init.d/redis-server start

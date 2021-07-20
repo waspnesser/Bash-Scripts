@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ $1 == "" ]];then
+	echo "Usage: youtube-mp3-download <url>"
+else
+	youtube-dl -i --extract-audio --audio-format mp3 $1
+fi
